@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import json
 import sys
+import pandas as pd
 
 def read_txt_files_from_directory(directory_path):
     file_contents = {}
@@ -56,3 +57,18 @@ def pre_process(text):
     filtered_tokens = remove_stop_words(tokens_no_punctuation)
     stemmed_tokens = stemming(filtered_tokens)
     return stemmed_tokens
+
+
+def safe_read_csv(proj_directory:str, fname: str, nrows):
+    try:
+        filepath = os.path.join(proj_directory, fname)
+        return pd.read_csv(filepath_or_buffer=filepath, nrows=nrows)
+    except Exception as e:
+        print(f"An error occurred while reading the file: {e}")
+        return None
+
+def load_dataset(proj_directory:str,fname: str, nrows):
+    data = safe_read_csv(proj_directory,fname, nrows)
+    data['tokens'] = data['patient'].apply(lambda text: pre_process(text))
+    print("Data loaded")
+    return data
