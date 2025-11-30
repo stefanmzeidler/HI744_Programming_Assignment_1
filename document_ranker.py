@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 class DocumentRanker(ABC):
     def __init__(self, dataset):
         self.dataset = dataset
+        self.model = None
         self._build()
 
 
