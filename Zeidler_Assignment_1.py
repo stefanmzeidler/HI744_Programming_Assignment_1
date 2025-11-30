@@ -4,8 +4,9 @@ from patient_retriever import PatientRetriever
 import sys
 
 def main():
-    args = check_args()
-    patient_retriever = PatientRetriever(args[0],args[1])
+    nrows = 10000
+    path = check_args()
+    patient_retriever = PatientRetriever(path,nrows)
     patient_retriever.find_top_5()
     patient_retriever.similar_patients_to_json()
     patient_retriever.metrics_to_json()
@@ -13,13 +14,13 @@ def main():
 
 
 def check_args():
-    if (args := sys.argv[1:]) is None:
+    if (len(args := sys.argv[1:])) < 1:
         raise TypeError("Please provide arguments")
+    if len(args) != 1:
+        raise TypeError("Please provide one argument")
     if type(args[0]) != str:
-        raise TypeError("First argument must be a string")
-    if len(args) > 1 and type(args[1]) != int:
-        raise TypeError("Second argument must be a integer")
-    return args
+        raise TypeError("Argument must be a string")
+    return args[0]
 
-
-main()
+if __name__ == "__main__":
+    main()

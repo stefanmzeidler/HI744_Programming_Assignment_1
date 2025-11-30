@@ -2,10 +2,18 @@ import document_ranker
 import gensim
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import numpy as np
+from gensim.test.utils import get_tmpfile
+import os
+import multiprocessing
 
 class Doc2VecRanker(document_ranker.DocumentRanker):
     def _build(self):
-        self.model = self._train_doc2vec()
+        self.fname = "my_doc2vec_model"
+        if os.path.exists(self.fname):
+            print("Loading existing doc2vec model")
+            self.model = Doc2Vec.load(self.fname)
+        else:
+            self.model = self._train_doc2vec()
 
     def _read_corpus(self, tokens_only=False):
         """
@@ -21,13 +29,23 @@ class Doc2VecRanker(document_ranker.DocumentRanker):
                 yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
 
     def _train_doc2vec(self):
-      model = gensim.models.doc2vec.Doc2Vec(vector_size=50, min_count=1, epochs=40)
+      print("Creating doc2vec model")
+      print("Building doc2vec vocab")
+      cores = multiprocessing.cpu_count()
+      if cores > 2:
+          workers = cores - 2
+      else:
+          workers = 1
+      model = gensim.models.doc2vec.Doc2Vec(workers=workers, min_count=1, epochs=40)
       train_corpus = list(self._read_corpus())
       model.build_vocab(train_corpus)
       print("Doc2Vec Vocab built")
       print("Doc2Vec Starting training")
       model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
       print("Doc2Vec Training Finished")
+      temp_fname = get_tmpfile(os.path.join(os.getcwd(),self.fname))
+      model.save(temp_fname)
+      print("Model saved")
       return model
 
     def _create_vector_matrix(self):

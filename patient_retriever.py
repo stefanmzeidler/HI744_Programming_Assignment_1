@@ -7,7 +7,7 @@ from tfidf_ranker import TFIDFRanker
 import matplotlib.pyplot as plt
 import numpy as np
 import ast
-
+from sklearn.metrics import precision_recall_fscore_support as prfs
 
 
 class PatientRetriever:
@@ -22,13 +22,14 @@ class PatientRetriever:
     def _safe_read_csv(proj_directory: str, fname: str, nrows):
         try:
             filepath = os.path.join(proj_directory, fname)
-            return pd.read_csv(filepath_or_buffer=filepath, nrows=nrows)
+            return pd.read_csv(filepath_or_buffer=filepath, usecols = ['patient_uid','patient','similar_patients'],nrows=nrows)
         except Exception as e:
             print(f"An error occurred while reading the file: {e}")
-            return None
+            raise
 
     @staticmethod
     def _load_dataset(proj_directory: str, fname: str, nrows):
+        print("Loading dataset")
         data = PatientRetriever._safe_read_csv(proj_directory, fname, nrows)
         data['tokens'] = data['patient'].apply(lambda text: utils.pre_process(text))
         print("Data loaded")
@@ -71,11 +72,11 @@ class PatientRetriever:
 
     @staticmethod
     def _calc_precision_recall(y_true, y_pred):
-        true_positives = len([patient for patient in y_pred if patient in y_true])
-        false_positives = len(y_pred) - true_positives
-        false_negatives = len(y_true) - true_positives
-        precision = true_positives / (true_positives + false_positives)
-        recall = 0 if true_positives + false_negatives == 0 else true_positives / (true_positives + false_negatives)
+        true_set = set(y_true)
+        pred_set = set(y_pred)
+        true_positives = len(true_set & pred_set)
+        precision = true_positives / len(pred_set) if pred_set else 0
+        recall = true_positives / len(true_set) if true_set else 0
         return precision, recall
 
     def plot_precision_recall(self):
@@ -87,6 +88,9 @@ class PatientRetriever:
         tfidf_avg_precision = self.dataset['tfidf_precision'].mean()
         tfidf_avg_rec = self.dataset['tfidf_recall'].mean()
         values = np.array([doc2vec_avg_precision, doc2vec_avg_rec, tfidf_avg_precision, tfidf_avg_rec])
+        _, ax = plt.subplots()
+        bars = ax.bar(range(len(values)), values)
+        ax.bar_label(bars,fmt="%.2f", padding=3)
         plt.bar(categories, values, color=['tab:blue', 'tab:orange', 'tab:blue', 'tab:orange'])
         plt.xlabel("Document Representation")
         plt.ylabel("Score")
