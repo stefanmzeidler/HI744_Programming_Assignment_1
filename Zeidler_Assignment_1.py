@@ -11,6 +11,7 @@ def main():
     patient_retriever.similar_patients_to_json()
     patient_retriever.metrics_to_json()
     patient_retriever.plot_precision_recall()
+    print(f"Average overlap: {patient_retriever.calc_overlap()}")
 
 
 def check_args():
